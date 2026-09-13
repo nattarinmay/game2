@@ -1,692 +1,838 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>ผจญภัยหยดน้ำ: วัฏจักรของน้ำ</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=Sarabun:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --sky-top:#bdeaff;
-    --sky-bottom:#eafaff;
-    --sun:#ffd34e;
-    --sun-core:#ffb703;
-    --ocean-deep:#0e6ba8;
-    --ocean-light:#4fb6e8;
-    --cloud:#ffffff;
-    --cloud-shadow:#cfe9f6;
-    --land:#7bc67e;
-    --land-deep:#5aa860;
-    --ink:#123c4a;
-    --ink-soft:#3d6b78;
-    --coral:#ff8a5b;
-    --coral-deep:#f06a3a;
-    --amber:#ffb74d;
-    --card:#ffffff;
-    --card-line:#dff1f7;
-    font-size: 16px;
-  }
-  *{box-sizing:border-box;}
-  html,body{
-    margin:0; padding:0; height:100%;
-    font-family:'Sarabun',sans-serif;
-    color:var(--ink);
-    overflow:hidden;
-  }
-  body{
-    background:linear-gradient(180deg,var(--sky-top) 0%, var(--sky-bottom) 55%, #fef9e7 100%);
-    display:flex; align-items:center; justify-content:center;
-    min-height:100vh;
-  }
-  #app{
-    width:100%; max-width:820px; height:100vh; max-height:900px;
-    display:flex; flex-direction:column;
-    position:relative;
-    padding:18px 18px 0;
-  }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ocean Current Quest: สายพานแห่งมหาสมุทร</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            font-family: 'Kanit', sans-serif;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-  /* ---------- progress ---------- */
-  .progress{
-    display:flex; gap:10px; justify-content:center; align-items:center;
-    padding:6px 0 14px;
-    flex-shrink:0;
-  }
-  .drop{
-    width:26px; height:32px; position:relative;
-    opacity:.35; transform:scale(.85);
-    transition:opacity .4s ease, transform .4s ease;
-  }
-  .drop svg{ width:100%; height:100%; display:block; }
-  .drop.active{ opacity:1; transform:scale(1.08); }
-  .drop.done{ opacity:1; }
+        /* Fluid glowing animations */
+        @keyframes float-gentle {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(1.5deg); }
+        }
 
-  /* ---------- stage frame ---------- */
-  .stage-frame{
-    flex:1; min-height:0;
-    background:linear-gradient(180deg,#a9e3fb 0%, #dff5ff 70%);
-    border-radius:28px;
-    position:relative;
-    overflow:hidden;
-    box-shadow:0 10px 0 rgba(14,107,168,.12), 0 20px 40px rgba(14,107,168,.15);
-    border:4px solid #ffffff;
-  }
-  .scene{
-    position:absolute; inset:0;
-    display:none;
-  }
-  .scene.active{ display:block; }
-  .scene svg{ width:100%; height:100%; display:block; }
+        @keyframes pulse-glow {
+            0%, 100% { filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.6)); }
+            50% { filter: drop-shadow(0 0 35px rgba(168, 85, 247, 0.9)); }
+        }
 
-  /* narration + controls sit below frame */
-  .narration-wrap{
-    flex-shrink:0;
-    padding:16px 4px 18px;
-  }
-  .narration-card{
-    background:var(--card);
-    border:2px solid var(--card-line);
-    border-radius:20px;
-    padding:16px 20px;
-    font-size:1.08rem;
-    line-height:1.65;
-    color:var(--ink);
-    position:relative;
-    min-height:64px;
-    display:flex;
-    align-items:center;
-    gap:14px;
-  }
-  .mascot-badge{
-    flex-shrink:0;
-    width:48px; height:48px;
-  }
-  .stage-title{
-    font-family:'Kanit',sans-serif;
-    font-weight:700;
-    font-size:1.35rem;
-    color:var(--ocean-deep);
-    margin:0 0 6px;
-  }
+        @keyframes talk-bounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-8px) scale(1.03); }
+        }
 
-  .controls{
-    display:flex; justify-content:flex-end; margin-top:12px;
-  }
-  .btn{
-    font-family:'Kanit',sans-serif;
-    font-weight:600;
-    font-size:1.02rem;
-    border:none;
-    border-radius:16px;
-    padding:13px 26px;
-    cursor:pointer;
-    color:#fff;
-    background:var(--coral);
-    box-shadow:0 5px 0 var(--coral-deep);
-    transition:transform .12s ease, box-shadow .12s ease;
-  }
-  .btn:active{
-    transform:translateY(4px);
-    box-shadow:0 1px 0 var(--coral-deep);
-  }
-  .btn.secondary{
-    background:var(--ocean-light);
-    box-shadow:0 5px 0 var(--ocean-deep);
-  }
+        @keyframes shake-wrong {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px) rotate(-2deg); }
+            40%, 80% { transform: translateX(10px) rotate(2deg); }
+        }
 
-  /* ---------- question overlay ---------- */
-  .quiz-overlay{
-    position:absolute; inset:0;
-    background:rgba(14,60,74,.42);
-    display:flex; align-items:flex-end; justify-content:center;
-    opacity:0; pointer-events:none;
-    transition:opacity .25s ease;
-    border-radius:28px;
-    z-index:5;
-  }
-  .quiz-overlay.show{ opacity:1; pointer-events:auto; }
-  .quiz-card{
-    width:100%;
-    background:var(--card);
-    border-radius:24px 24px 20px 20px;
-    padding:22px 22px 24px;
-    transform:translateY(30px);
-    transition:transform .3s cubic-bezier(.2,.9,.3,1.2);
-    max-height:92%;
-    overflow-y:auto;
-  }
-  .quiz-overlay.show .quiz-card{ transform:translateY(0); }
-  .quiz-eyebrow{
-    font-family:'Kanit',sans-serif;
-    font-weight:600;
-    color:var(--coral-deep);
-    font-size:.95rem;
-    margin:0 0 6px;
-  }
-  .quiz-question{
-    font-family:'Kanit',sans-serif;
-    font-weight:600;
-    font-size:1.28rem;
-    color:var(--ink);
-    margin:0 0 16px;
-    line-height:1.5;
-  }
-  .choices{
-    display:flex; flex-direction:column; gap:10px;
-  }
-  .choice{
-    text-align:left;
-    font-family:'Sarabun',sans-serif;
-    font-size:1.05rem;
-    font-weight:500;
-    padding:13px 16px;
-    border-radius:14px;
-    border:2px solid var(--card-line);
-    background:#f7fcff;
-    cursor:pointer;
-    transition:background .15s ease, border-color .15s ease, transform .1s ease;
-    color:var(--ink);
-  }
-  .choice:hover{ border-color:var(--ocean-light); }
-  .choice:active{ transform:scale(.99); }
-  .choice.correct{
-    background:#e4f8ea; border-color:#5aa860; color:#2c5c34;
-  }
-  .choice.wrong{
-    background:#fff1e6; border-color:var(--amber); color:#8a5417;
-  }
-  .choice[disabled]{ cursor:default; }
+        @keyframes current-flow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
 
-  .feedback{
-    margin-top:14px; font-size:1rem; line-height:1.6;
-    padding:12px 14px; border-radius:14px;
-    display:none;
-  }
-  .feedback.show{ display:block; }
-  .feedback.ok{ background:#e4f8ea; color:#2c5c34; }
-  .feedback.no{ background:#fff1e6; color:#8a5417; }
+        .animate-float { animation: float-gentle 4s ease-in-out infinite; }
+        .animate-glow { animation: pulse-glow 3s ease-in-out infinite; }
+        .animate-talk { animation: talk-bounce 0.4s ease-in-out 2; }
+        .animate-shake { animation: shake-wrong 0.5s ease-in-out; }
 
-  .quiz-actions{ margin-top:16px; display:flex; justify-content:flex-end; }
+        /* Glassmorphism Containers */
+        .glass-panel {
+            background: rgba(8, 20, 44, 0.82);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(56, 189, 248, 0.25);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(56, 189, 248, 0.08);
+        }
 
-  /* ---------- final screen ---------- */
-  .final-screen{
-    position:absolute; inset:0;
-    background:linear-gradient(180deg,#bdeaff, #fef9e7);
-    border-radius:28px;
-    display:none;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    padding:30px;
-    z-index:6;
-  }
-  .final-screen.show{ display:flex; }
-  .final-title{
-    font-family:'Kanit',sans-serif;
-    font-weight:700;
-    font-size:1.9rem;
-    color:var(--ocean-deep);
-    margin:14px 0 6px;
-  }
-  .final-sub{ font-size:1.05rem; color:var(--ink-soft); margin:0 0 18px; max-width:440px; }
-  .stars{ display:flex; gap:8px; margin-bottom:6px; }
-  .stars svg{ width:44px; height:44px; }
+        .glass-dialogue {
+            background: rgba(5, 14, 33, 0.92);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 2px solid rgba(56, 189, 248, 0.45);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(14, 165, 233, 0.2);
+        }
 
-  /* ---------- score chip ---------- */
-  .score-chip{
-    position:absolute; top:18px; right:18px;
-    background:#fff; border:2px solid var(--card-line);
-    border-radius:14px; padding:6px 14px;
-    font-family:'Kanit',sans-serif; font-weight:600;
-    color:var(--ocean-deep); font-size:.95rem;
-    display:flex; align-items:center; gap:6px;
-    z-index:2;
-  }
+        /* Dynamic Ocean Atmosphere Gradients */
+        .bg-ch1 { background: radial-gradient(circle at center, #0284c7 0%, #0f172a 70%, #020617 100%); }
+        .bg-ch2 { background: radial-gradient(circle at center, #0284c7 0%, #1e1b4b 70%, #030712 100%); }
+        .bg-ch3 { background: radial-gradient(circle at center, #0d9488 0%, #0f172a 70%, #020617 100%); }
+        .bg-ch4 { background: radial-gradient(circle at center, #2563eb 0%, #064e3b 70%, #020617 100%); }
+        .bg-ch5 { background: radial-gradient(circle at center, #7c3aed 0%, #0f172a 70%, #020617 100%); }
 
-  @media (prefers-reduced-motion: reduce){
-    *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
-  }
-
-  @media (max-width:480px){
-    :root{ font-size:15px; }
-    #app{ padding:12px 10px 0; }
-    .narration-card{ font-size:1rem; padding:14px 16px; }
-  }
-</style>
+        /* Canvas Overlay */
+        #ocean-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+    </style>
 </head>
-<body>
+<body id="game-body" class="bg-slate-950 text-white min-h-screen flex flex-col justify-between relative overflow-x-hidden transition-colors duration-1000 bg-ch1">
 
-<div id="app">
+    <!-- Interactive Canvas Layer for Ocean Currents Particles -->
+    <canvas id="ocean-canvas"></canvas>
 
-  <div class="progress" id="progress"></div>
+    <header class="relative z-10 w-full p-4 flex justify-between items-center max-w-5xl mx-auto">
+        <div class="flex items-center space-x-3">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-400 via-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 animate-glow">
+                <i class="fa-solid fa-water text-white text-xl"></i>
+            </div>
+            <div>
+                <h1 class="font-extrabold text-base md:text-xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-teal-200 to-indigo-300">
+                    Ocean Current Quest
+                </h1>
+                <p class="text-xs text-cyan-400/80 font-medium">สายพานแห่งมหาสมุทร - Visual Novel Science</p>
+            </div>
+        </div>
 
-  <div class="stage-frame" id="stageFrame">
+        <div class="flex items-center space-x-3">
+            <div id="score-badge" class="hidden glass-panel px-4 py-1.5 rounded-full flex items-center space-x-2 border border-amber-400/40">
+                <i class="fa-solid fa-star text-amber-400"></i>
+                <span id="score-text" class="font-extrabold text-amber-300 text-sm">0</span>
+                <span class="text-xs text-slate-400 hidden sm:inline">คะแนน</span>
+            </div>
+            <button onclick="toggleAudio()" class="w-10 h-10 glass-panel rounded-full flex items-center justify-center text-cyan-300 hover:text-white hover:border-cyan-400 transition">
+                <i class="fa-solid fa-volume-high" id="audio-icon"></i>
+            </button>
+        </div>
+    </header>
 
-    <!-- SCENE 0: Ocean / Sun heats water -->
-    <div class="scene" id="scene-0">
-      <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <linearGradient id="seaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#4fb6e8"/>
-            <stop offset="100%" stop-color="#0e6ba8"/>
-          </linearGradient>
-        </defs>
-        <rect width="400" height="300" fill="#bdeaff"/>
-        <circle id="sun0" cx="320" cy="70" r="34" fill="var(--sun)"/>
-        <g id="rays0" stroke="var(--sun-core)" stroke-width="4" stroke-linecap="round">
-          <line x1="320" y1="20" x2="320" y2="6"/>
-          <line x1="365" y1="35" x2="376" y2="24"/>
-          <line x1="380" y1="70" x2="396" y2="70"/>
-          <line x1="365" y1="105" x2="376" y2="116"/>
-          <line x1="275" y1="35" x2="264" y2="24"/>
-        </g>
-        <rect x="0" y="190" width="400" height="110" fill="url(#seaGrad)"/>
-        <path d="M0 190 Q 20 180 40 190 T 80 190 T 120 190 T 160 190 T 200 190 T 240 190 T 280 190 T 320 190 T 360 190 T 400 190 V300 H0 Z" fill="#eafaff" opacity=".5">
-          <animateTransform attributeName="transform" type="translate" values="0 0;-40 0;0 0" dur="4s" repeatCount="indefinite"/>
-        </path>
-        <g id="steam0" opacity="0">
-          <circle cx="150" cy="185" r="6" fill="#ffffff" opacity=".8"/>
-          <circle cx="200" cy="185" r="5" fill="#ffffff" opacity=".7"/>
-          <circle cx="250" cy="185" r="6" fill="#ffffff" opacity=".8"/>
-        </g>
-      </svg>
-    </div>
+    <main class="relative z-10 flex-grow flex items-center justify-center p-3 md:p-6 max-w-4xl mx-auto w-full">
 
-    <!-- SCENE 1: Condensation - clouds forming -->
-    <div class="scene" id="scene-1">
-      <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
-        <rect width="400" height="300" fill="#bdeaff"/>
-        <rect x="0" y="230" width="400" height="70" fill="#0e6ba8"/>
-        <g id="vapor1">
-          <circle cx="120" cy="220" r="5" fill="#fff" opacity=".9"/>
-          <circle cx="180" cy="215" r="5" fill="#fff" opacity=".9"/>
-          <circle cx="240" cy="220" r="5" fill="#fff" opacity=".9"/>
-          <circle cx="300" cy="215" r="5" fill="#fff" opacity=".9"/>
-        </g>
-        <g id="cloud1" transform="translate(200,90) scale(0.2)" opacity="0">
-          <ellipse cx="0" cy="10" rx="70" ry="34" fill="#ffffff"/>
-          <ellipse cx="-45" cy="18" rx="42" ry="26" fill="#ffffff"/>
-          <ellipse cx="48" cy="20" rx="46" ry="28" fill="#ffffff"/>
-          <ellipse cx="0" cy="-10" rx="50" ry="30" fill="#ffffff"/>
-        </g>
-      </svg>
-    </div>
+        <!-- ================= 1. START SCREEN ================= -->
+        <div id="screen-start" class="w-full glass-panel rounded-3xl p-6 md:p-10 text-center shadow-2xl relative overflow-hidden my-auto border border-cyan-500/30">
+            <!-- Animated Hero Banner SVG -->
+            <div class="w-48 h-36 mx-auto mb-4 flex justify-center items-center relative animate-float">
+                <div class="w-32 h-32 relative animate-glow">
+                    <!-- Luminus Rays Preview -->
+                    <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-2xl">
+                        <path d="M 50 20 Q 80 40 90 70 Q 50 85 10 70 Q 20 40 50 20 Z" fill="url(#lumi-start-grad)" />
+                        <!-- Wings -->
+                        <path d="M 10 70 Q 2 40 30 35 Q 20 60 10 70 Z" fill="#38bdf8" opacity="0.8" />
+                        <path d="M 90 70 Q 98 40 70 35 Q 80 60 90 70 Z" fill="#38bdf8" opacity="0.8" />
+                        <!-- Eyes & Bioluminescent Dots -->
+                        <circle cx="43" cy="38" r="3" fill="#000" /><circle cx="57" cy="38" r="3" fill="#000" />
+                        <circle cx="44" cy="37" r="1" fill="#fff" /><circle cx="58" cy="37" r="1" fill="#fff" />
+                        <circle cx="50" cy="50" r="4" fill="#a855f7" />
+                        <circle cx="35" cy="60" r="2.5" fill="#38bdf8" /><circle cx="65" cy="60" r="2.5" fill="#38bdf8" />
+                        <defs>
+                            <linearGradient id="lumi-start-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#38bdf8" />
+                                <stop offset="50%" stop-color="#818cf8" />
+                                <stop offset="100%" stop-color="#c084fc" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
 
-    <!-- SCENE 2: Precipitation - rain falls -->
-    <div class="scene" id="scene-2">
-      <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
-        <rect width="400" height="300" fill="#a9d3e0"/>
-        <ellipse cx="200" cy="70" rx="90" ry="38" fill="#dfeef4"/>
-        <ellipse cx="130" cy="80" rx="55" ry="30" fill="#dfeef4"/>
-        <ellipse cx="270" cy="80" rx="58" ry="32" fill="#dfeef4"/>
-        <rect x="0" y="250" width="400" height="50" fill="#5aa860"/>
-        <g id="rain2" stroke="#4fb6e8" stroke-width="3" stroke-linecap="round">
-          <line x1="100" y1="110" x2="94" y2="140"/>
-          <line x1="150" y1="115" x2="144" y2="150"/>
-          <line x1="200" y1="110" x2="194" y2="140"/>
-          <line x1="250" y1="118" x2="244" y2="150"/>
-          <line x1="300" y1="112" x2="294" y2="145"/>
-        </g>
-      </svg>
-    </div>
+            <h2 class="text-3xl md:text-5xl font-extrabold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-100 to-teal-300 drop-shadow-lg">
+                การเดินทางแห่งมหาสมุทร
+            </h2>
+            <p class="text-slate-300 text-sm md:text-base max-w-xl mx-auto mb-8 leading-relaxed">
+                ดำดิ่งสู่ห้วงลึกใต้สมุทรไปกับ <span class="text-cyan-300 font-bold">"กัปตันไอริน"</span> และ <span class="text-purple-300 font-bold">"ลูมินุส"</span> ปลานกกระจอกเรืองแสงแห่งพฤกษสมุทร เรียนรู้กลไกการไหลเวียนของน้ำ และกู้วิกฤตสายพานลำเลียงมหาสมุทรโลก!
+            </p>
 
-    <!-- SCENE 3: Runoff - river forms -->
-    <div class="scene" id="scene-3">
-      <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
-        <rect width="400" height="300" fill="#cdeeff"/>
-        <path d="M0 60 Q120 0 220 90 Q80 160 180 220 Q260 280 400 240 V300 H0 Z" fill="#5aa860"/>
-        <path id="river3" d="M0 90 Q120 40 220 120 Q90 190 190 240 Q260 290 400 260" fill="none" stroke="#4fb6e8" stroke-width="18" stroke-linecap="round"/>
-        <g id="droplets3">
-          <circle cx="40" cy="80" r="5" fill="#eafaff"/>
-          <circle cx="150" cy="100" r="5" fill="#eafaff"/>
-          <circle cx="230" cy="180" r="5" fill="#eafaff"/>
-          <circle cx="330" cy="250" r="5" fill="#eafaff"/>
-        </g>
-      </svg>
-    </div>
+            <button onclick="startGame()" class="px-9 py-4 bg-gradient-to-r from-cyan-500 via-teal-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 font-extrabold text-lg rounded-2xl shadow-xl shadow-cyan-500/30 transform hover:-translate-y-1 active:translate-y-0 transition duration-200 flex items-center mx-auto space-x-3 text-white border border-cyan-300/40">
+                <span>เริ่มออกเดินเรือ</span>
+                <i class="fa-solid fa-compass animate-spin" style="animation-duration: 10s;"></i>
+            </button>
+        </div>
 
-    <!-- SCENE 4: Back to ocean -->
-    <div class="scene" id="scene-4">
-      <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
-        <rect width="400" height="300" fill="#bdeaff"/>
-        <path d="M0 70 Q150 20 260 100 Q330 140 400 120" fill="none" stroke="#4fb6e8" stroke-width="16" stroke-linecap="round"/>
-        <rect x="0" y="180" width="400" height="120" fill="#0e6ba8"/>
-        <path d="M0 180 Q 20 170 40 180 T 80 180 T 120 180 T 160 180 T 200 180 T 240 180 T 280 180 T 320 180 T 360 180 T 400 180 V300 H0 Z" fill="#4fb6e8" opacity=".6">
-          <animateTransform attributeName="transform" type="translate" values="0 0;-40 0;0 0" dur="3.5s" repeatCount="indefinite"/>
-        </path>
-        <g id="flow4">
-          <circle cx="60" cy="90" r="6" fill="#eafaff"/>
-          <circle cx="180" cy="70" r="6" fill="#eafaff"/>
-          <circle cx="300" cy="110" r="6" fill="#eafaff"/>
-        </g>
-      </svg>
-    </div>
+        <!-- ================= 2. MAIN STORY & QUIZ SCREEN ================= -->
+        <div id="screen-game" class="hidden w-full flex flex-col space-y-4">
+            
+            <!-- Chapter Indicator & Map Dot Tracker -->
+            <div class="glass-panel rounded-2xl px-5 py-3 flex justify-between items-center border border-cyan-500/30">
+                <div class="flex items-center space-x-3">
+                    <span id="chapter-badge" class="px-3.5 py-1 rounded-full text-xs font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">
+                        บทที่ 1/5
+                    </span>
+                    <h3 id="chapter-title" class="font-extrabold text-sm md:text-base text-white tracking-wide">
+                        ประตูสู่อ่าวลึก (Density & Thermohaline)
+                    </h3>
+                </div>
+                <div id="chapter-dots" class="flex space-x-1.5"></div>
+            </div>
 
-    <!-- SCENE 5: Full cycle summary -->
-    <div class="scene" id="scene-5">
-      <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
-        <rect width="400" height="300" fill="#eafaff"/>
-        <circle cx="200" cy="150" r="90" fill="none" stroke="#bcdff0" stroke-width="14"/>
-        <g id="cycleDot5">
-          <circle cx="200" cy="60" r="9" fill="var(--coral)"/>
-        </g>
-        <circle cx="200" cy="60" r="16" fill="var(--sun)" opacity=".9"/>
-        <ellipse cx="120" cy="120" rx="30" ry="16" fill="#fff"/>
-        <ellipse cx="280" cy="120" rx="30" ry="16" fill="#fff"/>
-        <rect x="0" y="230" width="400" height="70" fill="#0e6ba8"/>
-        <path d="M60 230 Q140 190 200 230 Q260 260 340 230" fill="none" stroke="#4fb6e8" stroke-width="10" stroke-linecap="round"/>
-      </svg>
-    </div>
+            <!-- Scene Stage Visual & Avatars -->
+            <div id="scene-canvas" class="w-full h-48 md:h-56 rounded-3xl glass-panel relative overflow-hidden flex items-end justify-between px-6 md:px-12 pb-2 border border-slate-700/60 shadow-2xl">
+                <!-- Water Current Flow Backdrop Effect -->
+                <div class="absolute inset-0 opacity-20 bg-gradient-to-r from-cyan-500 via-teal-400 to-indigo-600 blur-xl animate-pulse"></div>
 
-  </div>
+                <!-- Captain Airin Avatar Container -->
+                <div id="avatar-airin-box" class="flex flex-col items-center z-10 transition-transform duration-300">
+                    <div id="avatar-airin" class="w-24 h-24 md:w-32 md:h-32"></div>
+                    <span class="text-xs bg-slate-950/90 text-cyan-300 px-3 py-1 rounded-full border border-cyan-500/40 font-bold shadow-lg">
+                        กัปตันไอริน
+                    </span>
+                </div>
 
-  <div class="narration-wrap">
-    <h2 class="stage-title" id="stageTitle">ทะเลใหญ่กลางแดดจ้า</h2>
-    <div class="narration-card">
-      <svg class="mascot-badge" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="#4fb6e8"/><circle cx="24" cy="24" r="22" fill="none" stroke="#fff" stroke-width="3"/><circle cx="17" cy="20" r="3" fill="#123c4a"/><circle cx="31" cy="20" r="3" fill="#123c4a"/><path d="M15 30 Q24 38 33 30" stroke="#123c4a" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
-      <p id="narrationText" style="margin:0;">สวัสดี! เราคือ "หยดใส" วันนี้เราจะพาไปผจญภัยไปกับวัฏจักรของน้ำกัน ✨ ดวงอาทิตย์กำลังส่องแสงลงมาที่ทะเลอันกว้างใหญ่ ทำให้น้ำค่อยๆ ร้อนขึ้น...</p>
-    </div>
-    <div class="controls">
-      <button class="btn" id="nextBtn">ไปต่อกันเลย</button>
-    </div>
-  </div>
+                <!-- Central Ocean Element Icon -->
+                <div class="text-5xl md:text-6xl text-cyan-400/30 mb-8 z-0 animate-glow">
+                    <i id="center-bg-icon" class="fa-solid fa-water"></i>
+                </div>
 
-  <div class="score-chip" id="scoreChip">⭐ 0 / 6</div>
+                <!-- Luminus Spirit Avatar Container -->
+                <div id="avatar-luminus-box" class="flex flex-col items-center z-10 transition-transform duration-300">
+                    <div id="avatar-luminus" class="w-24 h-24 md:w-32 md:h-32"></div>
+                    <span class="text-xs bg-slate-950/90 text-purple-300 px-3 py-1 rounded-full border border-purple-500/40 font-bold shadow-lg">
+                        ลูมินุส
+                    </span>
+                </div>
+            </div>
 
-  <div class="quiz-overlay" id="quizOverlay">
-    <div class="quiz-card">
-      <p class="quiz-eyebrow">คำถามชวนคิด</p>
-      <p class="quiz-question" id="quizQuestion">...</p>
-      <div class="choices" id="choicesWrap"></div>
-      <div class="feedback" id="feedbackBox"></div>
-      <div class="quiz-actions">
-        <button class="btn" id="quizNextBtn" style="display:none;">ไปต่อ</button>
-      </div>
-    </div>
-  </div>
+            <!-- MODE A: Dynamic Visual Novel Dialogue Box -->
+            <div id="dialogue-card" class="glass-dialogue rounded-3xl p-5 md:p-7 flex flex-col justify-between space-y-4 relative min-h-[190px]">
+                <div class="flex items-center space-x-2">
+                    <span id="speaker-name" class="font-extrabold text-xs md:text-sm px-3.5 py-1 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">
+                        กัปตันไอริน
+                    </span>
+                </div>
 
-  <div class="final-screen" id="finalScreen">
-    <svg width="90" height="90" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="#4fb6e8"/><circle cx="24" cy="24" r="22" fill="none" stroke="#fff" stroke-width="3"/><circle cx="17" cy="20" r="3" fill="#123c4a"/><circle cx="31" cy="20" r="3" fill="#123c4a"/><path d="M14 28 Q24 40 34 28" stroke="#123c4a" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
-    <div class="stars" id="starsWrap"></div>
-    <h1 class="final-title">เก่งมาก นักวิทยาศาสตร์น้อย!</h1>
-    <p class="final-sub" id="finalMsg">เธอเข้าใจวัฏจักรของน้ำแล้ว ลองเล่นอีกครั้งเพื่อทบทวนความจำได้เลยนะ</p>
-    <button class="btn" id="restartBtn">เล่นอีกครั้ง</button>
-  </div>
+                <!-- Typewriter Dialogue Text Container -->
+                <p id="dialogue-text" class="text-slate-100 text-sm md:text-base leading-relaxed flex-grow font-normal">
+                    <!-- Text dynamically rendered -->
+                </p>
 
-</div>
+                <div class="flex justify-end pt-2">
+                    <button id="btn-next-dialogue" onclick="nextDialogue()" class="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-extrabold text-xs md:text-sm rounded-xl shadow-lg transition duration-200 flex items-center space-x-2 border border-cyan-300/30 group">
+                        <span>อ่านต่อ</span>
+                        <i class="fa-solid fa-chevron-right group-hover:translate-x-1 transition"></i>
+                    </button>
+                </div>
+            </div>
 
-<script>
-const stages = [
-  {
-    title: "ทะเลใหญ่กลางแดดจ้า",
-    narration: "สวัสดี! เราคือ \"หยดใส\" วันนี้เราจะพาไปผจญภัยไปกับวัฏจักรของน้ำกัน ✨ ดวงอาทิตย์กำลังส่องแสงลงมาที่ทะเลอันกว้างใหญ่ ทำให้น้ำค่อยๆ ร้อนขึ้น จนกลายเป็นไอมองไม่เห็น แล้วลอยขึ้นสู่ท้องฟ้า ขั้นตอนนี้เรียกว่า \"การระเหย\"",
-    play: (el)=>{
-      const steam = el.querySelector('#steam0');
-      steam.style.transition = 'opacity 1.5s ease';
-      requestAnimationFrame(()=>{ steam.style.opacity = 1; });
-      steam.querySelectorAll('circle').forEach((c,i)=>{
-        c.animate([
-          {transform:'translateY(0px)', opacity:0},
-          {transform:'translateY(-140px)', opacity:.9, offset:.5},
-          {transform:'translateY(-220px)', opacity:0}
-        ], {duration:3200, iterations:Infinity, delay:i*500, easing:'ease-in'});
-      });
-      el.querySelector('#sun0').animate(
-        [{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],
-        {duration:2600, iterations:Infinity}
-      );
-    },
-    question: {
-      q: "เมื่อดวงอาทิตย์ทำให้น้ำในทะเลร้อนขึ้นมากๆ น้ำจะเปลี่ยนเป็นอะไร?",
-      choices: ["ไอน้ำที่ลอยขึ้นฟ้า", "ก้อนน้ำแข็ง", "เม็ดทราย", "หินก้อนเล็ก"],
-      correct: 0,
-      why: "ถูกต้อง! ความร้อนจากดวงอาทิตย์ทำให้น้ำระเหยกลายเป็นไอน้ำ แล้วลอยขึ้นสู่ท้องฟ้า ขั้นตอนนี้เรียกว่า \"การระเหย\" (Evaporation)"
-    }
-  },
-  {
-    title: "ไอน้ำรวมตัวเป็นเมฆ",
-    narration: "ไอน้ำที่ลอยขึ้นไปสูงๆ จะเจอกับอากาศที่เย็นกว่า ทำให้ไอน้ำจับตัวกันเป็นละอองน้ำเล็กๆ มากมาย รวมกันจนกลายเป็น \"เมฆ\" ก้อนใหญ่ลอยอยู่บนฟ้า ขั้นตอนนี้เรียกว่า \"การควบแน่น\"",
-    play:(el)=>{
-      const vapor = el.querySelector('#vapor1');
-      vapor.querySelectorAll('circle').forEach((c,i)=>{
-        c.animate([
-          {transform:'translateY(0px)', opacity:.9},
-          {transform:'translateY(-160px)', opacity:.3}
-        ], {duration:2600, iterations:Infinity, delay:i*300, easing:'ease-in'});
-      });
-      const cloud = el.querySelector('#cloud1');
-      cloud.animate(
-        [{transform:'translate(200px,90px) scale(0.2)', opacity:0},
-         {transform:'translate(200px,90px) scale(1)', opacity:1}],
-        {duration:2500, fill:'forwards', easing:'ease-out'}
-      );
-    },
-    question:{
-      q:"ไอน้ำที่ลอยสูงขึ้นไปเจออากาศเย็น จะรวมตัวกันกลายเป็นอะไร?",
-      choices:["เมฆ","ควันไฟ","ฝุ่นละออง","สายลม"],
-      correct:0,
-      why:"เยี่ยมเลย! เมื่อไอน้ำเจออากาศเย็น มันจะควบแน่นกลายเป็นละอองน้ำเล็กๆ รวมกันเป็นเมฆ เรียกขั้นตอนนี้ว่า \"การควบแน่น\" (Condensation)"
-    }
-  },
-  {
-    title: "เมฆหนักจนฝนโปรยปราย",
-    narration: "เมื่อเมฆเก็บละอองน้ำไว้มากขึ้นเรื่อยๆ จนหนักเกินกว่าจะลอยอยู่ได้ ละอองน้ำจะรวมตัวกันเป็นหยดใหญ่แล้วตกลงมาสู่พื้นดิน กลายเป็น \"ฝน\" ขั้นตอนนี้เรียกว่า \"การตกตะกอน\"",
-    play:(el)=>{
-      el.querySelectorAll('#rain2 line').forEach((l,i)=>{
-        l.animate([
-          {transform:'translateY(0px)', opacity:0},
-          {transform:'translateY(40px)', opacity:1, offset:.4},
-          {transform:'translateY(160px)', opacity:0}
-        ], {duration:900, iterations:Infinity, delay:i*130, easing:'linear'});
-      });
-    },
-    question:{
-      q:"เมื่อเมฆอุ้มน้ำไว้มากจนหนักเกินไป จะเกิดอะไรขึ้น?",
-      choices:["ฝนตกลงมาสู่พื้นดิน","เมฆจะหายไปเฉยๆ","ท้องฟ้ามืดตลอดไป","น้ำแข็งขึ้นบนฟ้า"],
-      correct:0,
-      why:"ใช่แล้ว! เมื่อละอองน้ำในเมฆรวมตัวกันจนหนักเกินไป มันจะตกลงมาเป็นฝน ขั้นตอนนี้เรียกว่า \"การตกตะกอน\" (Precipitation)"
-    }
-  },
-  {
-    title: "สายน้ำไหลรวมกัน",
-    narration: "น้ำฝนที่ตกลงบนพื้นดินและภูเขา จะไหลรวมกันเป็นลำธารเล็กๆ แล้วไหลไปรวมกันกลายเป็นแม่น้ำสายใหญ่ ขั้นตอนนี้เรียกว่า \"การไหลบ่า\" หรือ \"การรวมตัว\"",
-    play:(el)=>{
-      const river = el.querySelector('#river3');
-      const len = river.getTotalLength();
-      river.style.strokeDasharray = len;
-      river.style.strokeDashoffset = len;
-      river.animate([{strokeDashoffset:len},{strokeDashoffset:0}], {duration:2200, fill:'forwards', easing:'ease-out'});
-      el.querySelectorAll('#droplets3 circle').forEach((c,i)=>{
-        c.animate([
-          {transform:'translate(0px,0px)', opacity:.9},
-          {transform:'translate(60px,40px)', opacity:.9},
-          {transform:'translate(120px,90px)', opacity:0}
-        ], {duration:2600, iterations:Infinity, delay:i*260, easing:'ease-in-out'});
-      });
-    },
-    question:{
-      q:"น้ำฝนที่ตกลงบนพื้นดินจะไหลไปรวมกันที่ไหน?",
-      choices:["แม่น้ำ ลำธาร และทะเลสาบ","บนก้อนเมฆ","บนดวงจันทร์","ในอากาศ"],
-      correct:0,
-      why:"เก่งมาก! สายน้ำจากพื้นดินจะไหลไปรวมกันเป็นลำธารและแม่น้ำ ก่อนจะไหลต่อไปยังทะเลสาบหรือทะเลในที่สุด"
-    }
-  },
-  {
-    title: "แม่น้ำไหลกลับสู่ทะเล",
-    narration: "แม่น้ำสายใหญ่จะค่อยๆ ไหลลงเนินไปเรื่อยๆ จนในที่สุดก็ไหลกลับไปรวมกับทะเลอันกว้างใหญ่อีกครั้ง แล้ววัฏจักรทั้งหมดก็จะเริ่มต้นใหม่อีกครั้ง!",
-    play:(el)=>{
-      el.querySelectorAll('#flow4 circle').forEach((c,i)=>{
-        c.animate([
-          {transform:'translate(0px,0px)', opacity:.9},
-          {transform:'translate(80px,60px)', opacity:.6},
-          {transform:'translate(160px,110px)', opacity:0}
-        ], {duration:2600, iterations:Infinity, delay:i*350, easing:'ease-in-out'});
-      });
-    },
-    question:{
-      q:"หลังจากไหลผ่านแม่น้ำมาไกล ในที่สุดน้ำจะไหลไปสิ้นสุดที่ใด?",
-      choices:["ทะเลหรือมหาสมุทร","ยอดภูเขาสูง","ทะเลทราย","อวกาศ"],
-      correct:0,
-      why:"ถูกต้องเผง! แม่น้ำจะไหลกลับไปรวมกับทะเลหรือมหาสมุทร แล้ววัฏจักรของน้ำก็จะวนกลับไปเริ่มต้นที่การระเหยอีกครั้ง"
-    }
-  },
-  {
-    title: "วัฏจักรของน้ำ ไม่มีวันสิ้นสุด",
-    narration: "ตอนนี้เธอได้เรียนรู้ครบทุกขั้นตอนแล้ว: ระเหย ควบแน่น ตกตะกอน ไหลบ่า แล้ววนกลับสู่ทะเล วัฏจักรนี้เกิดขึ้นซ้ำแล้วซ้ำเล่าไม่มีวันหยุด ทำให้เรามีน้ำใช้ตลอดไปบนโลกของเรา 🌍💧",
-    play:(el)=>{
-      const dot = el.querySelector('#cycleDot5');
-      dot.animate(
-        [{transform:'rotate(0deg)'},{transform:'rotate(360deg)'}],
-        {duration:5000, iterations:Infinity, easing:'linear'}
-      );
-      dot.style.transformOrigin = '200px 150px';
-    },
-    question:{
-      q:"วัฏจักรของน้ำ (การระเหย ควบแน่น ตกตะกอน ไหลบ่า) เกิดขึ้นบ่อยแค่ไหน?",
-      choices:["วนซ้ำตลอดไปไม่มีที่สิ้นสุด","เกิดขึ้นเพียงครั้งเดียว","เกิดขึ้นปีละครั้งเท่านั้น","ไม่เคยเกิดขึ้นจริง"],
-      correct:0,
-      why:"เยี่ยมมาก! วัฏจักรของน้ำหมุนวนซ้ำไปเรื่อยๆ ไม่มีวันสิ้นสุด นี่คือเหตุผลที่โลกของเรามีน้ำหมุนเวียนใช้ได้ตลอดไป"
-    }
-  }
-];
+            <!-- MODE B: Science Interactive Challenge Box -->
+            <div id="quiz-card" class="hidden glass-panel rounded-3xl p-5 md:p-7 flex flex-col space-y-4 border border-amber-400/40">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-amber-300 font-extrabold flex items-center space-x-2">
+                        <i class="fa-solid fa-compass"></i>
+                        <span>ท้าทายความรู้วิทยาศาสตร์</span>
+                    </span>
+                    <button onclick="showHint()" id="btn-hint" class="text-xs text-amber-200 bg-amber-500/20 hover:bg-amber-500/30 px-3.5 py-1 rounded-lg border border-amber-400/40 transition">
+                        💡 คำใบ้
+                    </button>
+                </div>
 
-let current = 0;
-let score = 0;
-let answeredThisStage = false;
+                <h4 id="quiz-question" class="font-extrabold text-base md:text-lg text-white leading-snug">
+                    <!-- Question string -->
+                </h4>
 
-const progressEl = document.getElementById('progress');
-const stageTitleEl = document.getElementById('stageTitle');
-const narrationTextEl = document.getElementById('narrationText');
-const nextBtn = document.getElementById('nextBtn');
-const scoreChip = document.getElementById('scoreChip');
-const quizOverlay = document.getElementById('quizOverlay');
-const quizQuestion = document.getElementById('quizQuestion');
-const choicesWrap = document.getElementById('choicesWrap');
-const feedbackBox = document.getElementById('feedbackBox');
-const quizNextBtn = document.getElementById('quizNextBtn');
-const finalScreen = document.getElementById('finalScreen');
-const starsWrap = document.getElementById('starsWrap');
-const finalMsg = document.getElementById('finalMsg');
-const restartBtn = document.getElementById('restartBtn');
+                <div id="quiz-options" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    <!-- Dynamically created option buttons -->
+                </div>
 
-function buildProgress(){
-  progressEl.innerHTML = '';
-  stages.forEach((_, i)=>{
-    const d = document.createElement('div');
-    d.className = 'drop';
-    d.id = 'prog-'+i;
-    d.innerHTML = `<svg viewBox="0 0 26 32"><path d="M13 2 C13 2 24 17 24 23 A11 11 0 0 1 2 23 C2 17 13 2 13 2 Z" fill="#4fb6e8"/></svg>`;
-    progressEl.appendChild(d);
-  });
-}
+                <div id="quiz-hint-box" class="hidden text-xs text-amber-200 bg-amber-950/80 p-3.5 rounded-xl border border-amber-700/60 leading-relaxed">
+                    <!-- Hint text -->
+                </div>
+            </div>
 
-function updateProgress(){
-  stages.forEach((_, i)=>{
-    const d = document.getElementById('prog-'+i);
-    d.classList.remove('active','done');
-    if(i < current) d.classList.add('done');
-    if(i === current) d.classList.add('active');
-  });
-}
+        </div>
 
-function showScene(i){
-  document.querySelectorAll('.scene').forEach(s=>s.classList.remove('active'));
-  const el = document.getElementById('scene-'+i);
-  el.classList.add('active');
-  stages[i].play(el);
-}
+        <!-- ================= 3. END SUMMARY SCREEN ================= -->
+        <div id="screen-result" class="hidden w-full glass-panel rounded-3xl p-6 md:p-10 text-center shadow-2xl relative overflow-hidden my-auto border border-cyan-500/30">
+            <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-tr from-amber-300 to-yellow-500 flex items-center justify-center text-3xl text-slate-950 shadow-xl shadow-yellow-500/30 animate-bounce">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
 
-function loadStage(i){
-  answeredThisStage = false;
-  stageTitleEl.textContent = stages[i].title;
-  narrationTextEl.textContent = stages[i].narration;
-  nextBtn.textContent = (i === stages.length-1) ? "ทำแบบทดสอบสุดท้าย" : "ไปต่อกันเลย";
-  updateProgress();
-  showScene(i);
-}
+            <h2 class="text-3xl font-extrabold text-white mb-2">สายพานมหาสมุทรกลับสู่สมดุล!</h2>
+            <p class="text-slate-300 text-sm mb-6">กัปตันไอรินและลูมินุสแก้ไขสมดุลกระแสน้ำโลกได้สำเร็จแล้ว</p>
 
-nextBtn.addEventListener('click', ()=>{
-  openQuiz(current);
-});
+            <div id="star-rating" class="flex justify-center space-x-3 text-3xl text-amber-400 mb-6"></div>
 
-function openQuiz(i){
-  const q = stages[i].question;
-  quizQuestion.textContent = q.q;
-  choicesWrap.innerHTML = '';
-  feedbackBox.className = 'feedback';
-  feedbackBox.textContent = '';
-  quizNextBtn.style.display = 'none';
+            <div class="bg-slate-950/80 rounded-2xl p-5 border border-slate-800 max-w-sm mx-auto mb-8 space-y-3 shadow-inner">
+                <div class="flex justify-between text-slate-400 text-sm">
+                    <span>คำตอบที่ถูกต้อง:</span>
+                    <span id="summary-correct" class="text-white font-bold">0 / 5</span>
+                </div>
+                <div class="flex justify-between text-slate-400 text-sm">
+                    <span>คะแนนรวมทั้งหมด:</span>
+                    <span id="summary-score" class="text-amber-400 font-extrabold text-lg">0</span>
+                </div>
+                <div class="flex justify-between text-slate-400 text-sm">
+                    <span>ฉายานักสมุทรศาสตร์:</span>
+                    <span id="summary-rank" class="text-cyan-300 font-bold">ปรมาจารย์แห่งมหาสมุทร</span>
+                </div>
+            </div>
 
-  q.choices.forEach((choiceText, idx)=>{
-    const btn = document.createElement('button');
-    btn.className = 'choice';
-    btn.textContent = choiceText;
-    btn.addEventListener('click', ()=> handleAnswer(idx, q));
-    choicesWrap.appendChild(btn);
-  });
+            <button onclick="startGame()" class="px-8 py-3.5 bg-gradient-to-r from-cyan-500 via-teal-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 font-extrabold text-sm rounded-2xl shadow-lg transition border border-cyan-300/30 text-white">
+                <i class="fa-solid fa-rotate-right mr-2"></i>เริ่มสำรวจใหม่อีกครั้ง
+            </button>
+        </div>
 
-  quizOverlay.classList.add('show');
-}
+    </main>
 
-function handleAnswer(idx, q){
-  if(answeredThisStage) return;
-  const buttons = choicesWrap.querySelectorAll('.choice');
-  buttons.forEach(b=>b.disabled = true);
+    <footer class="relative z-10 w-full p-4 text-center text-xs text-slate-500 font-light">
+        Ocean Current Quest &copy; 2026 - สื่อการเรียนรู้วิทยาศาสตร์โลกและมหาสมุทรศาสตร์
+    </footer>
 
-  if(idx === q.correct){
-    answeredThisStage = true;
-    buttons[idx].classList.add('correct');
-    feedbackBox.className = 'feedback show ok';
-    feedbackBox.textContent = q.why;
-    score++;
-    scoreChip.textContent = `⭐ ${score} / ${stages.length}`;
-    quizNextBtn.style.display = 'inline-block';
-    quizNextBtn.textContent = (current === stages.length-1) ? "ดูผลลัพธ์" : "ไปต่อ";
-  } else {
-    buttons[idx].classList.add('wrong');
-    feedbackBox.className = 'feedback show no';
-    feedbackBox.textContent = "ยังไม่ถูกนะ ลองอ่านเรื่องราวอีกครั้งแล้วลองใหม่ดูสิ 🙂";
-    setTimeout(()=>{
-      buttons.forEach((b,i2)=>{ if(i2!==idx) b.disabled = false; });
-      buttons[idx].disabled = true;
-    }, 700);
-  }
-}
+    <script>
+        /* --------------------------------------------------
+         * Web Audio API Synthesizer Sound Engine
+         * -------------------------------------------------- */
+        class OceanSoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
 
-quizNextBtn.addEventListener('click', ()=>{
-  quizOverlay.classList.remove('show');
-  if(current === stages.length-1){
-    setTimeout(showFinal, 300);
-  } else {
-    current++;
-    setTimeout(()=> loadStage(current), 250);
-  }
-});
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
 
-function showFinal(){
-  starsWrap.innerHTML = '';
-  const starCount = score >= 6 ? 3 : score >= 4 ? 2 : 1;
-  for(let i=0;i<3;i++){
-    const filled = i < starCount;
-    const s = document.createElementNS('http://www.w3.org/2000/svg','svg');
-    s.setAttribute('viewBox','0 0 24 24');
-    s.innerHTML = `<path d="M12 2 L14.7 8.6 L21.8 9.2 L16.4 13.9 L18 20.9 L12 17.1 L6 20.9 L7.6 13.9 L2.2 9.2 L9.3 8.6 Z" fill="${filled ? '#ffd34e' : '#e6eef2'}" stroke="${filled?'#ffb703':'#d7e3e9'}" stroke-width="1"/>`;
-    starsWrap.appendChild(s);
-  }
-  finalMsg.textContent = `เธอตอบถูก ${score} จาก ${stages.length} ข้อ! ` + (score===stages.length ? "เข้าใจวัฏจักรของน้ำครบทุกขั้นตอนเลย เก่งสุดๆ" : "ลองเล่นอีกครั้งเพื่อทบทวนความจำได้นะ");
-  finalScreen.classList.add('show');
-}
+            playClick() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(300, now + 0.03);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.03);
+            }
 
-restartBtn.addEventListener('click', ()=>{
-  current = 0; score = 0;
-  scoreChip.textContent = `⭐ 0 / ${stages.length}`;
-  finalScreen.classList.remove('show');
-  loadStage(0);
-});
+            playTypewriter() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(800 + Math.random() * 200, now);
+                gain.gain.setValueAtTime(0.03, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.02);
+            }
 
-buildProgress();
-loadStage(0);
-</script>
+            playCorrect() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+                    gain.gain.setValueAtTime(0.12, now + idx * 0.07);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.25);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.07);
+                    osc.stop(now + idx * 0.07 + 0.25);
+                });
+            }
+
+            playWrong() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(240, now);
+                osc.frequency.linearRampToValueAtTime(120, now + 0.3);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            }
+        }
+
+        const audio = new OceanSoundEngine();
+        let isMuted = false;
+
+        function toggleAudio() {
+            isMuted = !isMuted;
+            audio.muted = isMuted;
+            document.getElementById('audio-icon').className = isMuted ? 'fa-solid fa-volume-xmark text-rose-400' : 'fa-solid fa-volume-high text-cyan-300';
+        }
+
+        /* --------------------------------------------------
+         * STREAMING_CHUNK:Defining Visual Novel Chapter Data...
+         * -------------------------------------------------- */
+        const storyChapters = [
+            {
+                id: 1,
+                title: "ประตูสู่อ่าวลึก - ความหนาแน่นและอุณหภูมิ",
+                bgClass: "bg-ch1",
+                icon: "fa-water",
+                dialogues: [
+                    { speaker: "กัปตันไอริน", moodAirin: "surprised", moodLumi: "normal", text: "บรึ่ศมมม! ลูมินุส ดูนั่นสิ! พอเรือดำน้ำของเราลงมาถึงบริเวณขั้วโลก น้ำทะเลรอบตัวก็เย็นลงอย่างรวดเร็วเลย!" },
+                    { speaker: "ลูมินุส", moodAirin: "normal", moodLumi: "happy", text: "ถูกต้องแล้วกัปตันไอริน! น้ำทะเลตรงนี้อุณหภูมิต่ำมาก แถมยังมีความเค็มสูง ทำให้มวลน้ำมีความหนาแน่นมหาศาล!" },
+                    { speaker: "กัปตันไอริน", moodAirin: "thinking", moodLumi: "happy", text: "อ๋อ... มวลน้ำที่เย็นและเค็มจัด มีความหนาแน่นสูงกว่าน้ำรอบข้าง จึงจมตัวลงสู่ก้นมหาสมุทรเหมือนน้ำตกใต้ทะเลสินะ!" },
+                    { speaker: "ลูมินุส", moodAirin: "happy", moodLumi: "happy", text: "แม่นยำมาก! จุดเริ่มของสายพานมหาสมุทรลึกเกิดจากการจมตัวของมวลน้ำความหนาแน่นสูงนี้แหละ ลองตอบคำถามเพื่อดำดิ่งต่อกันเลย!" }
+                ],
+                quiz: {
+                    question: "น้ำทะเลบริเวณขั้วโลกจมตัวลงสู่เบื้องลึก เกิดจากปัจจัยใดเป็นหลัก?",
+                    options: [
+                        "น้ำทะเลมีอุณหภูมิสูงและมีความเค็มต่ำ",
+                        "น้ำทะเลมีอุณหภูมิต่ำและความเค็มสูง ทำให้ความหนาแน่นสูง",
+                        "แรงลมพัดดูดมวลน้ำลงสู่ก้นทะเล",
+                        "การระเหยของน้ำทำให้มวลน้ำเบาลง"
+                    ],
+                    correct: 1,
+                    hint: "น้ำที่ 'เย็นจัด' และ 'เค็มจัด' จะมีความหนาแน่นมากกว่า จึงจมตัวลงสู่เบื้องลึกเสมอ!"
+                }
+            },
+            {
+                id: 2,
+                title: "กระแสน้ำกัลฟ์สตรีม - แม่น้ำแห่งความร้อน",
+                bgClass: "bg-ch2",
+                icon: "fa-wind",
+                dialogues: [
+                    { speaker: "กัปตันไอริน", moodAirin: "excited", moodLumi: "normal", text: "ว้าว! เรือกำลังถูกพัดพาไปด้วยกระแสน้ำผิวดินที่เร็วและอบอุ่นมาก! น้ำใสสีฟ้าครามตระการตาจังเลย!" },
+                    { speaker: "ลูมินุส", moodAirin: "excited", moodLumi: "happy", text: "นี่คือ 'กระแสน้ำอุ่นกัลฟ์สตรีม' แม่น้ำสายยักษ์บนผิวมหาสมุทรที่นำความร้อนจากเส้นศูนย์สูตรขึ้นไปทางขั้วโลกเหนือล่ะ!" },
+                    { speaker: "กัปตันไอริน", moodAirin: "thinking", moodLumi: "normal", text: "กระแสน้ำผิวดินมหาศาลขนาดนี้ เคลื่อนที่ไปได้ไกลเพราะมีลมประจำพัดผ่านผิวน้ำต่อเนื่องใช่ไหม?" },
+                    { speaker: "ลูมินุส", moodAirin: "happy", moodLumi: "happy", text: "ถูกต้อง! แรงเสียดทานระหว่างลมค้าและลมฝ่ายตะวันตกที่พัดพาผิวน้ำ คือเครื่องยนต์หลักของกระแสน้ำผิวดิน!" }
+                ],
+                quiz: {
+                    question: "กระแสน้ำอุ่นกัลฟ์สตรีม (Gulf Stream) บนผิวมหาสมุทร เกิดขึ้นจากอิทธิพลของสิ่งใดเป็นหลัก?",
+                    options: [
+                        "ลมค้าและลมฝ่ายตะวันตกที่พัดผ่านผิวน้ำต่อเนื่อง",
+                        "แรงดึงดูดระหว่างดวงจันทร์และโลก",
+                        "การแผ่รังสีจากภูเขาไฟใต้ทะเล",
+                        "การแข็งตัวของน้ำแข็งที่ขั้วโลก"
+                    ],
+                    correct: 0,
+                    hint: "กระแสน้ำผิวดินเกิดจากแรงเสียดทานของ 'ลมประจำถิ่น' ที่พัดผ่านผิวน้ำอย่างสม่ำเสมอ!"
+                }
+            },
+            {
+                id: 3,
+                title: "วงวนแห่งมหาสมุทร - แรงคอริออลิส",
+                bgClass: "bg-ch3",
+                icon: "fa-arrows-spin",
+                dialogues: [
+                    { speaker: "กัปตันไอริน", moodAirin: "surprised", moodLumi: "thinking", text: "ระวัง! เรือกำลังหมุนไปตามวนน้ำขนาดใหญ่ในมหาสมุทรแอตแลนติกเหนือ! ทำไมกระแสน้ำถึงไม่ไหลเป็นเส้นตรงล่ะ?" },
+                    { speaker: "ลูมินุส", moodAirin: "surprised", moodLumi: "normal", text: "นั่นเพราะผลจากการหมุนรอบตัวเองของโลก ทำให้เกิดแรงเสมือนที่เรียกว่า 'แรงคอริออลิส (Coriolis Force)' !" },
+                    { speaker: "กัปตันไอริน", moodAirin: "thinking", moodLumi: "normal", text: "อ๋อ! ในซีกโลกเหนือ แรงนี้จะเบี่ยงทิศทางของกระแสน้ำให้เฉไปทางขวาจนกลายเป็นวงวนมหาสมุทร (Gyre) ตามเข็มนาฬิกา!" },
+                    { speaker: "ลูมินุส", moodAirin: "happy", moodLumi: "happy", text: "ยอดเยี่ยมมากไอริน! มาใช้คำนวณทิศทางแรงคอริออลิส เพื่อนำเรือออกจากวนน้ำนี้กัน!" }
+                ],
+                quiz: {
+                    question: "ในซีกโลกเหนือ (Northern Hemisphere) แรงคอริออลิส ส่งผลให้ทิศทางการเคลื่อนที่ของกระแสน้ำเบี่ยงเบนไปทางใด?",
+                    options: [
+                        "เบี่ยงเบนไปทางซ้ายของทิศทางเดิม",
+                        "เบี่ยงเบนไปทางขวาของทิศทางเดิม",
+                        "พุ่งตรงลงสู่ก้นมหาสมุทร",
+                        "เคลื่อนที่ย้อนกลับทิศเดิม 180 องศา"
+                    ],
+                    correct: 1,
+                    hint: "จำง่ายๆ: ซีกโลกเหนือเบี่ยงไปทาง 'ขวา' (ตามเข็มนาฬิกา) ซีกโลกใต้เบี่ยงไปทาง 'ซ้าย'!"
+                }
+            },
+            {
+                id: 4,
+                title: "ขุมพลังแห่งความตื้น - การไหลขึ้นของน้ำ (Upwelling)",
+                bgClass: "bg-ch4",
+                icon: "fa-fish-fins",
+                dialogues: [
+                    { speaker: "กัปตันไอริน", moodAirin: "excited", moodLumi: "happy", text: "มองนั่นสิ! แสงสว่างเรืองรองเต็มไปหมด! มีฝูงปลา วาฬ และแพลงก์ตอนพืชเจริญเติบโตอย่างหนาแน่นเลย!" },
+                    { speaker: "ลูมินุส", moodAirin: "excited", moodLumi: "happy", text: "นี่คือบริเวณ 'การไหลขึ้นของน้ำ (Upwelling)' น้ำลึกที่เย็นและอุดมไปด้วยแร่ธาตุถูกดันขึ้นสู่ผิวน้ำชายฝั่ง!" },
+                    { speaker: "กัปตันไอริน", moodAirin: "happy", moodLumi: "happy", text: "แร่ธาตุจากก้นทะเลเปรียบเสมือนปุ๋ยชั้นดี ทำให้ห่วงโซ่อาหารทางทะเลอุดมสมบูรณ์และมีชีวิตชีวามากเลยนะ!" },
+                    { speaker: "ลูมินุส", moodAirin: "happy", moodLumi: "happy", text: "ถูกต้องที่สุด! ปรากฏการณ์นี้คือแหล่งอาหารสำคัญของสิ่งมีชีวิตในมหาสมุทรโลก!" }
+                ],
+                quiz: {
+                    question: "ปรากฏการณ์ 'การไหลขึ้นของน้ำ (Upwelling)' มีความสำคัญทางชีววิทยาต่อระบบนิเวศทางทะเลอย่างไร?",
+                    options: [
+                        "ลดอุณหภูมิผิวน้ำเพื่อทำลายแพลงก์ตอนพืช",
+                        "พัดพาขยะจากผิวน้ำลงไปฝังใต้ก้นทะเล",
+                        "นำแร่ธาตุและสารอาหารจากก้นทะเลขึ้นมาส่งเสริมการเจริญเติบโตของสิ่งมีชีวิต",
+                        "เพิ่มความเค็มของน้ำผิวดินเพื่อยับยั้งแบคทีเรีย"
+                    ],
+                    correct: 2,
+                    hint: "น้ำลึกพัดเอา 'สารอาหารและแร่ธาตุ' จากก้นทะเลขึ้นมาเลี้ยงแพลงก์ตอนและฝูงปลาผิวน้ำ!"
+                }
+            },
+            {
+                id: 5,
+                title: "สายพานลำเลียงแห่งโลก - Great Ocean Conveyor Belt",
+                bgClass: "bg-ch5",
+                icon: "fa-globe",
+                dialogues: [
+                    { speaker: "กัปตันไอริน", moodAirin: "determined", moodLumi: "happy", text: "เราเดินทางมาถึงแกนกลางระบบมหาสมุทรโลกแล้ว! สายพานลำเลียงมหาสมุทร (Global Conveyor Belt) กำลังหมุนเวียนพลังงานความร้อนอยู่!" },
+                    { speaker: "ลูมินุส", moodAirin: "determined", moodLumi: "happy", text: "ใช่แล้ว! การไหลเวียนนี้เชื่อมโยงกระแสน้ำตื้นและน้ำลึกทั่วโลก ช่วยปรับสมดุลอุณหภูมิให้โลกเราไม่ร้อนหรือหนาวจัดเกินไป" },
+                    { speaker: "กัปตันไอริน", moodAirin: "thinking", moodLumi: "normal", text: "ถ้าสายพานนี้หยุดชะงักลง ภูมิอากาศโลกคงต้องแปรปรวนเข้าขั้นวิกฤตอย่างแน่นอน!" },
+                    { speaker: "ลูมินุส", moodAirin: "happy", moodLumi: "happy", text: "ไขปริศนาข้อสุดท้าย เพื่อปรับสมดุลสายพานแห่งมหาสมุทรให้ถ่ายทอดพลังงานสมบูรณ์กันเถอะ!" }
+                ],
+                quiz: {
+                    question: "หากระบบการไหลเวียนของสายพานลำเลียงมหาสมุทรโลก (Global Conveyor Belt) หยุดชะงัก จะเกิดผลกระทบอย่างไร?",
+                    options: [
+                        "ภูมิอากาศโลกแปรปรวนรุนแรง เขตร้อนจะร้อนจัด และเขตขั้วโลกจะหนาวเย็นจัด",
+                        "ระดับน้ำทะเลทั่วโลกจะลดลงอย่างสมบูรณ์",
+                        "แรงโน้มถ่วงของโลกจะเพิ่มขึ้น",
+                        "ลมพายุทั่วโลกจะหยุดพัดอย่างสิ้นเชิง"
+                    ],
+                    correct: 0,
+                    hint: "สายพานช่วยกระจายความร้อน หากหยุดชะงัก การถ่ายเทอุณหภูมิจะสูญเสีย สมดุลภูมิอากาศโลกจะวิกฤต!"
+                }
+            }
+        ];
+
+        /* --------------------------------------------------
+         * STREAMING_CHUNK:Game Logic & Controller Functions...
+         * -------------------------------------------------- */
+        let currentChapterIdx = 0;
+        let currentDialogueIdx = 0;
+        let score = 0;
+        let correctAnswersCount = 0;
+        let typewriterTimer = null;
+
+        function startGame() {
+            audio.playClick();
+            currentChapterIdx = 0;
+            currentDialogueIdx = 0;
+            score = 0;
+            correctAnswersCount = 0;
+
+            document.getElementById('screen-start').classList.add('hidden');
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            document.getElementById('score-badge').classList.remove('hidden');
+
+            updateScoreUI();
+            renderChapterDots();
+            loadChapter(currentChapterIdx);
+        }
+
+        function renderChapterDots() {
+            const container = document.getElementById('chapter-dots');
+            container.innerHTML = '';
+            storyChapters.forEach((ch, idx) => {
+                const dot = document.createElement('div');
+                dot.className = `w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                    idx === currentChapterIdx 
+                        ? 'bg-cyan-400 ring-4 ring-cyan-400/30 scale-125' 
+                        : idx < currentChapterIdx 
+                        ? 'bg-teal-400' 
+                        : 'bg-slate-700'
+                }`;
+                container.appendChild(dot);
+            });
+        }
+
+        function loadChapter(index) {
+            const ch = storyChapters[index];
+            currentDialogueIdx = 0;
+
+            document.getElementById('game-body').className = `bg-slate-950 text-white min-h-screen flex flex-col justify-between relative overflow-x-hidden transition-colors duration-1000 ${ch.bgClass}`;
+            document.getElementById('chapter-badge').innerText = `บทที่ ${ch.id}/5`;
+            document.getElementById('chapter-title').innerText = ch.title;
+            document.getElementById('center-bg-icon').className = `fa-solid ${ch.icon}`;
+
+            document.getElementById('dialogue-card').classList.remove('hidden');
+            document.getElementById('quiz-card').classList.add('hidden');
+            document.getElementById('quiz-hint-box').classList.add('hidden');
+
+            renderChapterDots();
+            displayDialogue();
+        }
+
+        function displayDialogue() {
+            const ch = storyChapters[currentChapterIdx];
+            const d = ch.dialogues[currentDialogueIdx];
+
+            document.getElementById('speaker-name').innerText = d.speaker;
+            document.getElementById('speaker-name').className = d.speaker === 'กัปตันไอริน' 
+                ? 'font-extrabold text-xs md:text-sm px-3.5 py-1 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 shadow-sm'
+                : 'font-extrabold text-xs md:text-sm px-3.5 py-1 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-400/40 shadow-sm';
+
+            // Typewriter Effect
+            const textContainer = document.getElementById('dialogue-text');
+            textContainer.innerText = '';
+            if (typewriterTimer) clearInterval(typewriterTimer);
+
+            let charIdx = 0;
+            typewriterTimer = setInterval(() => {
+                if (charIdx < d.text.length) {
+                    textContainer.innerText += d.text.charAt(charIdx);
+                    if (charIdx % 3 === 0) audio.playTypewriter();
+                    charIdx++;
+                } else {
+                    clearInterval(typewriterTimer);
+                }
+            }, 25);
+
+            renderAirinAvatar(d.moodAirin, d.speaker === 'กัปตันไอริน');
+            renderLuminusAvatar(d.moodLumi, d.speaker === 'ลูมินุส');
+        }
+
+        function nextDialogue() {
+            audio.playClick();
+            const ch = storyChapters[currentChapterIdx];
+            
+            // If typewriter is still completing, finish instantly
+            const d = ch.dialogues[currentDialogueIdx];
+            const textContainer = document.getElementById('dialogue-text');
+            if (textContainer.innerText.length < d.text.length) {
+                clearInterval(typewriterTimer);
+                textContainer.innerText = d.text;
+                return;
+            }
+
+            currentDialogueIdx++;
+            if (currentDialogueIdx < ch.dialogues.length) {
+                displayDialogue();
+            } else {
+                showQuizMode();
+            }
+        }
+
+        function showQuizMode() {
+            const ch = storyChapters[currentChapterIdx];
+            document.getElementById('dialogue-card').classList.add('hidden');
+            document.getElementById('quiz-card').classList.remove('hidden');
+
+            document.getElementById('quiz-question').innerText = ch.quiz.question;
+
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+
+            ch.quiz.options.forEach((optText, optIdx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-3.5 rounded-2xl bg-slate-900/90 hover:bg-cyan-600/40 border border-slate-700 hover:border-cyan-400 transition duration-200 text-xs md:text-sm font-medium text-slate-100 flex items-center space-x-3 group";
+                btn.onclick = () => selectQuizAnswer(optIdx);
+                btn.innerHTML = `
+                    <span class="w-7 h-7 rounded-xl bg-slate-800 group-hover:bg-cyan-400 group-hover:text-slate-950 font-bold flex items-center justify-center shrink-0 text-xs transition border border-slate-600">
+                        ${String.fromCharCode(65 + optIdx)}
+                    </span>
+                    <span>${optText}</span>
+                `;
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function showHint() {
+            audio.playClick();
+            const ch = storyChapters[currentChapterIdx];
+            const hintBox = document.getElementById('quiz-hint-box');
+            hintBox.innerText = `💡 คำใบ้: ${ch.quiz.hint}`;
+            hintBox.classList.remove('hidden');
+        }
+
+        function selectQuizAnswer(selectedIndex) {
+            const ch = storyChapters[currentChapterIdx];
+            const optionBtns = document.getElementById('quiz-options').children;
+
+            for (let btn of optionBtns) {
+                btn.disabled = true;
+                btn.classList.add('cursor-not-allowed', 'opacity-60');
+            }
+
+            if (selectedIndex === ch.quiz.correct) {
+                audio.playCorrect();
+                renderAirinAvatar('happy', true);
+                renderLuminusAvatar('happy', true);
+
+                optionBtns[selectedIndex].classList.remove('bg-slate-900/90', 'opacity-60');
+                optionBtns[selectedIndex].classList.add('bg-teal-600/90', 'border-teal-400', 'text-white');
+
+                score += 100;
+                correctAnswersCount++;
+                updateScoreUI();
+
+                setTimeout(() => {
+                    nextChapter();
+                }, 1600);
+            } else {
+                audio.playWrong();
+                renderAirinAvatar('surprised', false);
+                renderLuminusAvatar('thinking', false);
+
+                optionBtns[selectedIndex].classList.remove('bg-slate-900/90', 'opacity-60');
+                optionBtns[selectedIndex].classList.add('bg-rose-600/90', 'border-rose-400', 'text-white');
+                optionBtns[ch.quiz.correct].classList.remove('bg-slate-900/90', 'opacity-60');
+                optionBtns[ch.quiz.correct].classList.add('bg-teal-600/70', 'border-teal-400');
+
+                setTimeout(() => {
+                    nextChapter();
+                }, 2000);
+            }
+        }
+
+        function nextChapter() {
+            currentChapterIdx++;
+            if (currentChapterIdx < storyChapters.length) {
+                loadChapter(currentChapterIdx);
+            } else {
+                showResultsScreen();
+            }
+        }
+
+        function updateScoreUI() {
+            document.getElementById('score-text').innerText = score;
+        }
+
+        function showResultsScreen() {
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('hidden');
+
+            document.getElementById('summary-correct').innerText = `${correctAnswersCount} / 5 ข้อ`;
+            document.getElementById('summary-score').innerText = score;
+
+            const starContainer = document.getElementById('star-rating');
+            starContainer.innerHTML = '';
+            let starsCount = score >= 400 ? 3 : score >= 200 ? 2 : 1;
+            let rank = score >= 400 ? "ปรมาจารย์สมุทรศาสตร์โลก 🌊" : "ผู้สำรวจสายพานมหาสมุทร ⚓";
+
+            for (let i = 0; i < 3; i++) {
+                const star = document.createElement('i');
+                star.className = i < starsCount ? "fa-solid fa-star text-amber-400 drop-shadow-md" : "fa-regular fa-star text-slate-600";
+                starContainer.appendChild(star);
+            }
+
+            document.getElementById('summary-rank').innerText = rank;
+        }
+
+        /* --------------------------------------------------
+         * STREAMING_CHUNK:Rendering Expressive SVG Characters...
+         * -------------------------------------------------- */
+        function renderAirinAvatar(mood = 'normal', isTalking = false) {
+            const container = document.getElementById('avatar-airin');
+            const box = document.getElementById('avatar-airin-box');
+            box.className = `flex flex-col items-center transition-transform duration-300 z-10 ${isTalking ? 'scale-110 animate-talk' : 'scale-95 opacity-85'}`;
+
+            let mouth = `<path d="M 40 58 Q 50 66 60 58" stroke="#000" stroke-width="2.5" fill="none"/>`;
+            let eyes = `<circle cx="38" cy="45" r="4" fill="#000"/><circle cx="62" cy="45" r="4" fill="#000"/>`;
+
+            if (mood === 'excited' || mood === 'happy') {
+                mouth = `<path d="M 38 54 Q 50 68 62 54 Z" fill="#f43f5e" stroke="#000" stroke-width="2"/>`;
+            } else if (mood === 'surprised') {
+                eyes = `<circle cx="38" cy="43" r="5.5" fill="#000"/><circle cx="62" cy="43" r="5.5" fill="#000"/>`;
+                mouth = `<circle cx="50" cy="60" r="5" fill="#000"/>`;
+            } else if (mood === 'thinking') {
+                mouth = `<path d="M 40 60 L 60 58" stroke="#000" stroke-width="2.5" fill="none"/>`;
+            }
+
+            container.innerHTML = `
+                <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-xl">
+                    <!-- Captain Cap Back -->
+                    <circle cx="50" cy="50" r="35" fill="#38bdf8"/>
+                    ${eyes}
+                    ${mouth}
+                    <!-- Cheeks -->
+                    <circle cx="33" cy="50" r="3" fill="#fb7185" opacity="0.6"/>
+                    <circle cx="67" cy="50" r="3" fill="#fb7185" opacity="0.6"/>
+                    <!-- Sailor Cap -->
+                    <path d="M 20 32 Q 50 12 80 32 Z" fill="#0f172a"/>
+                    <rect x="25" y="30" width="50" height="6" fill="#fbbf24" rx="2"/>
+                    <circle cx="50" cy="22" r="4" fill="#38bdf8"/>
+                </svg>
+            `;
+        }
+
+        function renderLuminusAvatar(mood = 'normal', isTalking = false) {
+            const container = document.getElementById('avatar-luminus');
+            const box = document.getElementById('avatar-luminus-box');
+            box.className = `flex flex-col items-center transition-transform duration-300 z-10 ${isTalking ? 'scale-110 animate-talk' : 'scale-95 opacity-85'}`;
+
+            let eyes = `<circle cx="43" cy="38" r="3" fill="#000"/><circle cx="57" cy="38" r="3" fill="#000"/>`;
+            let mouth = `<path d="M 44 48 Q 50 54 56 48" stroke="#000" stroke-width="2" fill="none"/>`;
+
+            if (mood === 'happy') {
+                mouth = `<path d="M 43 46 Q 50 56 57 46 Z" fill="#f43f5e" stroke="#000" stroke-width="1.5"/>`;
+            } else if (mood === 'thinking') {
+                mouth = `<line x1="44" y1="48" x2="56" y2="48" stroke="#000" stroke-width="2"/>`;
+            }
+
+            container.innerHTML = `
+                <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-2xl">
+                    <!-- Rays Body -->
+                    <path d="M 50 18 Q 82 38 92 68 Q 50 82 8 68 Q 18 38 50 18 Z" fill="url(#lumi-main-grad)"/>
+                    <!-- Side Fins -->
+                    <path d="M 8 68 Q 0 38 28 33 Q 18 58 8 68 Z" fill="#38bdf8" opacity="0.8"/>
+                    <path d="M 92 68 Q 100 38 72 33 Q 82 58 92 68 Z" fill="#38bdf8" opacity="0.8"/>
+                    ${eyes}
+                    ${mouth}
+                    <!-- Bioluminescent Orbs -->
+                    <circle cx="50" cy="60" r="4" fill="#c084fc"/>
+                    <circle cx="36" cy="65" r="2.5" fill="#38bdf8"/>
+                    <circle cx="64" cy="65" r="2.5" fill="#38bdf8"/>
+                    <defs>
+                        <linearGradient id="lumi-main-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#38bdf8"/>
+                            <stop offset="60%" stop-color="#818cf8"/>
+                            <stop offset="100%" stop-color="#a855f7"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            `;
+        }
+
+        /* --------------------------------------------------
+         * STREAMING_CHUNK:Initializing Ocean Canvas Background Animation...
+         * -------------------------------------------------- */
+        (function initOceanCanvas() {
+            const canvas = document.getElementById('ocean-canvas');
+            const ctx = canvas.getContext('2d');
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            const particles = [];
+            for (let i = 0; i < 45; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 3 + 1,
+                    speedX: Math.random() * 1.5 + 0.5,
+                    speedY: Math.sin(Math.random() * Math.PI) * 0.5,
+                    opacity: Math.random() * 0.6 + 0.2
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.x += p.speedX;
+                    p.y += Math.sin(p.x * 0.01) * 0.5;
+
+                    if (p.x > canvas.width) p.x = -10;
+
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(56, 189, 248, ${p.opacity})`;
+                    ctx.fill();
+                });
+                requestAnimationFrame(animate);
+            }
+            animate();
+        })();
+    </script>
 </body>
 </html>
